@@ -17,7 +17,7 @@ abstract class AbstractMigration
         $this->connection = $connection;
     }
 
-    public abstract function up();
+    public abstract function up() : void;
 
     /**
      * @param string $sql
