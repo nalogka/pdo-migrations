@@ -1,0 +1,24 @@
+{
+  "name": "nalogka/pdo-migrations",
+  "type": "library",
+  "description": "A simple pdo migrations",
+  "keywords": [
+    "PDO",
+    "migration"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alexander Ladygin",
+      "email": "hitslab@yandex.ru"
+    }
+  ],
+  "require": {
+    "php" : "~7.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Nalogka\\PdoMigrations\\": "src"
+    }
+  }
+}
