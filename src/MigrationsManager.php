@@ -8,7 +8,6 @@ use Nalogka\PdoMigrations\Exception\MigrationException;
 
 class MigrationsManager
 {
-
     /**
      * @var \PDO Database connection
      */
@@ -22,14 +21,10 @@ class MigrationsManager
     /**
      * MigrationsManager constructor.
      * @param Configuration $configuration
-     * @throws ConfigurationException
      */
     public function __construct(Configuration $configuration)
     {
         $this->configuration = $configuration;
-
-        $this->createConnection();
-        $this->initializeTable();
     }
 
     public function getMigrationsList()
@@ -52,20 +47,20 @@ class MigrationsManager
         }
 
         usort($migrations, function ($a, $b) {
-            return ($a['timestamp'] < $b['timestamp']) ? -1 : 1;
+            return $a['timestamp'] <=> $b['timestamp'];
         });
 
-        $versions = [];
-
-        foreach ($migrations as $migration) {
-            $versions[] = $migration['version'];
-        }
-
-        return $versions;
+        return array_column($migrations, 'version');
     }
 
+    /**
+     * @return array
+     * @throws ConfigurationException
+     */
     public function getExecutedMigrationsList()
     {
+        $this->initialize();
+
         $sql = "SELECT * FROM `{$this->configuration->tableName}` ORDER BY executed_at ASC";
 
         $stmt = $this->connection->query($sql);
@@ -79,28 +74,22 @@ class MigrationsManager
         return $executedMigrations;
     }
 
+    /**
+     * @return array
+     * @throws ConfigurationException
+     */
     public function getMigrationsToExecuteList()
     {
-        $migrationsList = $this->getMigrationsList();
-
-        $executedMigrationsList = $this->getExecutedMigrationsList();
-
-        $migrationsToExecuteList = [];
-
-        foreach ($migrationsList as $version) {
-            if (!in_array($version, $executedMigrationsList)) {
-                $migrationsToExecuteList[] = $version;
-            }
-        }
-
-        return $migrationsToExecuteList;
+        return array_diff($this->getMigrationsList(), $this->getExecutedMigrationsList());
     }
 
     /**
      * @param array $migrations
+     * @throws ConfigurationException
      * @throws MigrationException
      */
-    public function executeMigrations(array $migrations) {
+    public function executeMigrations(array $migrations)
+    {
         foreach ($migrations as $version) {
             $this->executeMigration($version);
         }
@@ -108,10 +97,13 @@ class MigrationsManager
 
     /**
      * @param string $version
+     * @throws ConfigurationException
      * @throws MigrationException
      */
     public function executeMigration(string $version): void
     {
+        $this->initialize();
+
         $className = $this->getClassReferenceByVersion($version);
 
         $filePath = $this->getFilePathByVersion($version);
@@ -155,6 +147,24 @@ class MigrationsManager
     }
 
     /**
+     * Initialize migrations table
+     * @throws ConfigurationException
+     */
+    private function initialize(): void
+    {
+        if ($this->connection === null) {
+            $this->createConnection();
+        }
+
+        $sql = "CREATE TABLE IF NOT EXISTS `{$this->configuration->tableName}` (
+            `version` varchar(14) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `executed_at` datetime NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET={$this->configuration->tableCharset} COLLATE={$this->configuration->tableCollate};";
+
+        $this->connection->exec($sql);
+    }
+
+    /**
      * @throws ConfigurationException
      */
     private function createConnection(): void
@@ -194,18 +204,5 @@ class MigrationsManager
         }
 
         $this->connection = new \PDO($dsn, $username, $password);
-    }
-
-    /**
-     * Initialize migrations table
-     */
-    private function initializeTable(): void
-    {
-        $sql = "CREATE TABLE IF NOT EXISTS `{$this->configuration->tableName}` (
-            `version` varchar(14) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `executed_at` datetime NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET={$this->configuration->tableCharset} COLLATE={$this->configuration->tableCollate};";
-
-        $this->connection->exec($sql);
     }
 }
