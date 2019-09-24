@@ -4,6 +4,8 @@ declare(strict_types = 1);
 namespace Nalogka\PdoMigrations;
 
 
+use PDO;
+
 class Configuration
 {
     /**
@@ -40,4 +42,11 @@ class Configuration
      * @var string
      */
     public $migrationsNamespace = "PdoMigrations";
+
+    /**
+     * @var array A key=>value array of driver-specific connection options.
+     */
+    public $pdoOptions = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ];
 }
