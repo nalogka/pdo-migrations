@@ -138,6 +138,7 @@ class MigrationsManager
     {
         $fileName = "Version{$version}.php";
         $migrationsDir = rtrim($this->configuration->migrationsPath, "/");
+
         return "{$migrationsDir}/{$fileName}";
     }
 
@@ -202,7 +203,6 @@ class MigrationsManager
         if (!empty($parsedUrl['pass'])) {
             $password = $parsedUrl['pass'];
         }
-
-        $this->connection = new \PDO($dsn, $username, $password);
+        $this->connection = new \PDO($dsn, $username, $password, $this->configuration->pdoOptions);
     }
 }
